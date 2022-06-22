@@ -5,13 +5,20 @@ $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 
 $errors = [];
+$title = "";
+$description = "";
+$price = '';
+
+// echo "<pre>";
+// var_dump($_FILES);
+// echo "<pre>";
+// exit();
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     $title  = $_POST["title"];
     $description  = $_POST["description"];
     $price  = $_POST["price"];
-    $image  = $_POST["image"];
     $date = date("Y-m-d H:i:s");
 
 
@@ -23,20 +30,55 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $errors[] =
             'Please provide a price';
     }
+
+    // Create image folder
+    if (!is_dir('images')) {
+        mkdir('images');
+    }
+
+
     if (empty($errors)) {
+
+        $image = $_FILES['image'] ?? null;
+        $imagePath = '';
+        if ($image) {
+
+            $imagePath = "images/" . randomString(8) . "/" . $image['name'];
+
+            mkdir(dirname($imagePath));
+            move_uploaded_file($image['tmp_name'], $imagePath);
+        }
+
+
+
         $statement = $pdo->prepare(
             "INSERT INTO products (title, image, description, price, create_date)
         VALUES (:title,:image,:description,:price,:date)"
         );
 
         $statement->bindValue(":title", $title);
-        $statement->bindValue(":image", "");
+        $statement->bindValue(":image", $imagePath);
         $statement->bindValue(":description", $description);
         $statement->bindValue(":price", $price);
         $statement->bindValue(":date", $date);
 
         $statement->execute();
+
+        header("Location: index.php");
     }
+}
+
+
+function randomString($n)
+{
+    $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    $str = '';
+
+    for ($i = 0; $i < $n; $i++) {
+        $index = rand(0, strlen($characters) - 1);
+        $str .= $characters[$index];
+    }
+    return $str;
 }
 ?>
 
@@ -54,7 +96,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 <body>
     <h1>Create New Product</h1>
-    <?php if (empty($error)) : ?>
+    <?php if (!empty($errors)) : ?>
         <div class="alert alert-danger">
             <?php foreach ($errors as $error) : ?>
                 <div><?php echo $error ?></div>
@@ -62,7 +104,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         </div>
     <?php endif; ?>
 
-    <form action="create.php" method="post">
+    <form action="create.php" method="post" enctype="multipart/form-data">
 
         <div class="mb-3">
             <label>Product Image</label>
@@ -71,15 +113,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         </div>
         <div class="mb-3">
             <label>Product Title</label>
-            <input name="title" type="text" class="form-control">
+            <input value="<?php echo $title ?>" name="title" type="text" class="form-control">
         </div>
         <div class="mb-3">
             <label>Product Description</label>
-            <textarea name="description" id="" cols="30" rows="10" type="text" class="form-control"></textarea>
+            <textarea name="description" id="" cols="30" rows="10" type="text" class="form-control"><?php echo $description ?></textarea>
         </div>
         <div class="mb-3">
             <label>Product Price</label>
-            <input name="price" type="number" step="0.01" class="form-control">
+            <input value="<?php echo $price ?>" name="price" type="number" step="0.01" class="form-control">
         </div>
         <button type="submit" class="btn btn-primary">Submit</button>
     </form>
