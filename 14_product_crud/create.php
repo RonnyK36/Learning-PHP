@@ -4,7 +4,40 @@ $pdo = new PDO("mysql:host=localhost;port=3306;dbname=products_crud", "root", ""
 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 
+$errors = [];
 
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+
+    $title  = $_POST["title"];
+    $description  = $_POST["description"];
+    $price  = $_POST["price"];
+    $image  = $_POST["image"];
+    $date = date("Y-m-d H:i:s");
+
+
+    if (!$title) {
+        $errors[] = 'Please provide a title';
+    }
+
+    if (!$price) {
+        $errors[] =
+            'Please provide a price';
+    }
+    if (empty($errors)) {
+        $statement = $pdo->prepare(
+            "INSERT INTO products (title, image, description, price, create_date)
+        VALUES (:title,:image,:description,:price,:date)"
+        );
+
+        $statement->bindValue(":title", $title);
+        $statement->bindValue(":image", "");
+        $statement->bindValue(":description", $description);
+        $statement->bindValue(":price", $price);
+        $statement->bindValue(":date", $date);
+
+        $statement->execute();
+    }
+}
 ?>
 
 
@@ -21,7 +54,15 @@ $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 <body>
     <h1>Create New Product</h1>
-    <form action="create.php" method="get">
+    <?php if (empty($error)) : ?>
+        <div class="alert alert-danger">
+            <?php foreach ($errors as $error) : ?>
+                <div><?php echo $error ?></div>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+
+    <form action="create.php" method="post">
 
         <div class="mb-3">
             <label>Product Image</label>
