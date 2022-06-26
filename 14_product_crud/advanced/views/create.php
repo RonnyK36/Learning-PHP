@@ -19,40 +19,14 @@ $product = [
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
-    $title  = $_POST["title"];
-    $description  = $_POST["description"];
-    $price  = $_POST["price"];
+
+    require_once "validate_product.php";
+
     $date = date("Y-m-d H:i:s");
 
 
-    if (!$title) {
-        $errors[] = 'Please provide a title';
-    }
-
-    if (!$price) {
-        $errors[] =
-            'Please provide a price';
-    }
-
-    // Create image folder
-    if (!is_dir('images')) {
-        mkdir('images');
-    }
-
 
     if (empty($errors)) {
-
-        $image = $_FILES['image'] ?? null;
-        $imagePath = '';
-        if ($image && $image["tmp_name"]) {
-
-            $imagePath = "images/" . randomString(8) . "/" . $image['name'];
-
-            mkdir(dirname($imagePath));
-            move_uploaded_file($image['tmp_name'], $imagePath);
-        }
-
-
 
         $statement = $pdo->prepare(
             "INSERT INTO products (title, image, description, price, create_date)
